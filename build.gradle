@@ -1,0 +1,82 @@
+plugins {
+    id 'org.springframework.boot' version '3.5.6' apply false
+    id 'io.spring.dependency-management' version '1.1.7' apply false
+}
+allprojects {
+    repositories {
+        mavenCentral()
+    }
+}
+
+// 서브 모듈에 적용
+// settings.gradle include 모듈
+subprojects {
+    // Query DSL
+    buildscript {
+        ext {
+            queryDslVersion = "5.0.0"
+        }
+    }
+
+    // Root 프로젝트 명시버전 채용함 (자동)
+    apply plugin: 'java'
+    apply plugin: 'org.springframework.boot'
+    apply plugin: 'io.spring.dependency-management'
+
+    java {
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(17)
+        }
+    }
+
+    configurations {
+        compileOnly {
+            extendsFrom annotationProcessor
+        }
+    }
+
+    group = 'com.fhk.ticketing'
+    description = 'fhk-ticket-reservation'
+
+    dependencies {
+
+        // Spring MVC
+        implementation 'org.springframework.boot:spring-boot-starter-web'
+        developmentOnly 'org.springframework.boot:spring-boot-devtools'
+
+        // DB
+        runtimeOnly 'org.mariadb.jdbc:mariadb-java-client'
+        implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+
+        // Lombok
+        compileOnly 'org.projectlombok:lombok'
+        annotationProcessor 'org.projectlombok:lombok'
+        testCompileOnly 'org.projectlombok:lombok'  // 테스트용 추가
+        testAnnotationProcessor 'org.projectlombok:lombok'   // 테스트용 추가
+
+        // JUnitTest
+        testImplementation 'org.springframework.boot:spring-boot-starter-test'
+        testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+        // Query DSL
+        implementation "com.querydsl:querydsl-jpa:${queryDslVersion}:jakarta"
+
+        annotationProcessor(
+                "jakarta.persistence:jakarta.persistence-api",
+                "jakarta.annotation:jakarta.annotation-api",
+                "com.querydsl:querydsl-apt:${queryDslVersion}:jakarta")
+
+        // 스프링 시큐리티
+        implementation 'org.springframework.boot:spring-boot-starter-security'
+    }
+
+    // test
+    test {
+        useJUnitPlatform()
+    }
+
+    jar {
+        enabled = false
+    }
+
+}

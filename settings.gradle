@@ -1,0 +1,14 @@
+pluginManagement {
+    repositories {
+        gradlePluginPortal() // plugins DSL 사용시 필수
+        mavenCentral()
+    }
+}
+
+rootProject.name = 'fhk-ticket-reservation'
+
+include 'fhk-ticketing-member-service'
+include 'fhk-ticketing-movie-service'
+include 'fhk-ticketing-reservation-service'
+include 'fhk-ticketing-payment-service'
+include 'fhk-ticketing-ticket-service'

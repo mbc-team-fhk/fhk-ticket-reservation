@@ -1,0 +1,64 @@
+version = '0.9.1'
+
+dependencies {
+
+	// 모듈 import ( Maven Repo 리서치 스킵으로 단순하게 jar import 로 감)
+	// 동일 버전 모듈 덮어쓰기 하는경우 -> 수정사항 자동반영 안됨 (컴파일에러)
+	// 1. 아래 해당하는 모듈 삭제후 gradle sync
+	// 2. 아래 덮어쓰기한 모듈 다시 추가 후 gradle sync
+	implementation files("../libs/fhk-common-1.0.0-plain.jar")
+	implementation files("../libs/fhk-core-1.0.0-plain.jar")
+	implementation files("../libs/fhk-security-core-1.0.0-plain.jar")
+
+	//implementation 'org.springframework.boot:spring-boot-starter'
+	// spring-boot-starter   + json, tomcat, spring-web, spring-webmvc = spring-boot-starter-web
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	developmentOnly 'org.springframework.boot:spring-boot-devtools'
+
+	// DB
+	implementation 'org.mariadb.jdbc:mariadb-java-client'
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+	// jwt 토큰
+	implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
+	implementation 'io.jsonwebtoken:jjwt-impl:0.11.5'
+	implementation 'io.jsonwebtoken:jjwt-jackson:0.11.5'
+	runtimeOnly 'io.jsonwebtoken:jjwt-api:0.11.5'
+	annotationProcessor "org.springframework.boot:spring-boot-configuration-processor"
+
+	// redis
+	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+}
+
+
+/**
+ * Query DSL
+ */
+def qGenMain = "$buildDir/generated/sources/annotationProcessor/java/main"
+def qGenTest = "$buildDir/generated/sources/annotationProcessor/java/test"
+
+sourceSets {
+	main {
+		java {
+			// 기본 src 유지 + Q 클래스 생성 폴더만 추가
+			srcDirs = ["$projectDir/src/main/java"]
+			srcDirs += [qGenMain]
+		}
+	}
+	test {
+		java {
+			// 테스트에서 QueryDSL 쓰는 경우에만 유지. 아니면 이 줄 삭제 가능
+			srcDirs += [qGenTest]
+		}
+	}
+}
+
+// Q 클래스만 부분 청소
+tasks.register('cleanQMain', Delete) { delete qGenMain }
+tasks.register('cleanQTest', Delete) { delete qGenTest }
+// 컴파일 전 Q 삭제 → 재생성 유도
+tasks.named('compileJava') { dependsOn 'cleanQMain' }
+tasks.named('compileTestJava') { dependsOn 'cleanQTest' }
