@@ -2,6 +2,9 @@
 *.class
 *.log
 
+# === Spring Boot ===
+*.jar
+
 # === Gradle ===
 .gradle/
 build/
@@ -23,9 +26,6 @@ Thumbs.db
 logs/
 *.log
 *.tmp
-
-# === Spring Boot ===
-*.jar
 
 # libs 폴더 아래 jar는 추적 허용 ( 모듈 임포트용 )
 !libs/*.jar
