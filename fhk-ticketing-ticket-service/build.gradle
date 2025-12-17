@@ -1,0 +1,6 @@
+dependencies {
+    // redis
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+}
+
+bootJar { archiveFileName = 'fhk-ticketing-ticket-service.jar' }

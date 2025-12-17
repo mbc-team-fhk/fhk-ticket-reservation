@@ -1,0 +1,48 @@
+server:
+  port: ${SERVER_PORT:9001} # k3s 컨테이너 내부에서는 8080 요구함, env 설정 필요
+
+spring:
+  application:
+    name: fhk-ticketing-member-service
+  datasource:
+    password: ${DB_PW}
+    driver-class-name: org.mariadb.jdbc.Driver
+    username: ${DB_USER}
+    url: ${DB_URL:jdbc:mariadb://192.168.45.210:3306/fhk_ticket_reservation_db}
+  jpa:
+    properties:
+      hibernate.id.sequence.increment_size: ${SQL_INCREMENT_SIZE:1}   # dev 환경 기본값 1,  prod 프로필에서는 50 권장, env 설정 필요
+      hibernate:
+        default_batch_fetch_size: '1000'
+        format_sql: 'true'
+        show_sql: 'true'
+    hibernate:
+      ddl-auto: update
+    database-platform: org.hibernate.dialect.MariaDBDialect
+  data:
+    redis:
+      host: ${REDIS_HOST:192.168.45.211}  # 사설 IP 고정
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PW}
+
+jwt:
+  verifier: # JWT 인증시 사용
+    public-key-path: classpath:keys/jwt-public.pem
+
+management: # actuator pod 헬스체크
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never
+
+logging:
+  level:
+    org:
+      hibernate:
+        type:
+          descriptor:
+            sql: trace
+
