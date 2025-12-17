@@ -1,0 +1,180 @@
+// root/settings.gradle 에서 include 선언된 api-server 모듈 리스트를 도출
+//  * Jenkins 에서 checkout scm 되는순간 root 기준으로 잡히기때문에 기본 경로는 root/ 임
+def detectModules() {
+    // def 선언하면 지역변수로 활용가능
+    def names = []
+    def t = readFile('settings.gradle')
+
+    (t =~ /include\s+([^\n]+)/).each { m ->
+        def inner = m[1]
+        inner.split(',').each { tok ->
+            def s = tok.trim().replace("'", "")
+            if (s.startsWith(':'))
+                s = s.substring(1)
+
+            names << s.tokenize(':')[-1]
+        }
+    }
+
+    return names.findAll { d ->
+        fileExists(d) && (fileExists("${d}/build.gradle") || fileExists("${d}/build.gradle.kts"))
+    }
+}
+
+// 변경된 서브 모듈만 추출하기
+def changedTopDirs() {
+    // 멀티브랜치 기준: 직전 성공 커밋 없으면 바로 이전 커밋 사용
+    def base = env.GIT_PREVIOUS_SUCCESSFUL_COMMIT ?: 'HEAD~1'
+    def out = sh(script: "git diff --name-only ${base} HEAD", returnStdout: true).trim()
+
+    if (!out)
+        return []
+
+    def dirs = [] as Set
+    out.split('\n').each { p ->
+        def top = p.tokenize('/')[0]
+        if (top)
+            dirs << top
+    }
+
+    return dirs as List
+}
+
+pipeline {
+    agent any
+
+    environment {
+        JAVA17_HOME = '/usr/lib/jvm/java-17-openjdk-amd64' // jenkins 21.0.9 라서 jdk17 버전 명시필요
+        REGISTRY        = 'juno6800'
+        DOCKERFILE_PATH = 'infra/docker/Dockerfile'
+    }
+
+    options {
+        timestamps()
+    }
+
+    stages {
+
+        // 1 Resolve Modules
+        stage("Resolve Modules") {
+            steps {
+                script {
+                    def allModules = detectModules()
+                    def changedModules = changedTopDirs()
+                    def target = allModules.intersect(changedModules)
+
+                    // 변경된 모듈 감지 못하면 전체 빌드
+                    if (!target)
+                        target = allModules
+
+                    // script {} 내부에서 env.변수 선언하면 jenkins 환경변수가 됨
+                    env.MODULES = target.join(',')
+                    echo ">>> Commit changes detected: ${env.MODULES}"
+                }
+            }
+        }
+
+        // 2 브랜치 및 모듈별 프로세스 분기
+        stage("Deploy per Module") {
+            when {
+                expression {
+                    return env.MODULES?.trim()
+                }
+            }
+            steps {
+                script {
+                    checkout scm
+
+                    def modules = env.MODULES.split(',') as List
+
+                    for (def module : modules) {
+                        stage("Module: ${module}") {
+                            sh 'git fetch --tags || true'
+
+                            def gitBranch = env.GIT_BRANCH ?: ''
+                            def branchName = gitBranch.tokenize('/').last()
+                            echo "GIT_BRANCH=${gitBranch}, BRANCH_NAME=${branchName}"
+
+                            if (branchName == 'dev') {
+
+                                // Gradle build (bootJar)
+                                sh 'chmod +x gradlew'
+                                sh """
+                                  export JAVA_HOME=${env.JAVA17_HOME}
+                                  export PATH=${env.JAVA17_HOME}/bin:\$PATH
+                                  ./gradlew :${module}:clean :${module}:test :${module}:bootJar --no-daemon
+                                """
+                                continue
+                            }
+
+                            if (branchName in ['staging', 'prod']) {
+
+                                // Docker build & push (tagged only)
+                                def tag = sh(
+                                    script: "git describe --tags --exact-match 2>/dev/null || true",
+                                    returnStdout: true
+                                ).trim()
+
+                                if (!tag) {
+                                    echo "Skip... not tag commit"
+                                    continue
+                                }
+
+                                // dev와 워크스페이스 공유안함. 재빌드 필요
+                                // 추후에 dev 빌드본 승격으로 개선필요
+                                sh 'chmod +x gradlew'
+                                sh """
+                                  export JAVA_HOME=${env.JAVA17_HOME}
+                                  export PATH=${env.JAVA17_HOME}/bin:\$PATH
+                                  ./gradlew :${module}:clean :${module}:bootJar --no-daemon
+                                """
+
+                                def appName = module
+                                def image = "${env.REGISTRY}/${appName}:${tag}"
+
+                                withCredentials([usernamePassword(
+                                    credentialsId: 'dockerhub-cred',
+                                    usernameVariable: 'DOCKERHUB_USER',
+                                    passwordVariable: 'DOCKERHUB_PASS'
+                                )]) {
+                                    sh """
+                                      echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USER" --password-stdin
+
+                                      docker build \
+                                      -f ${module}/${env.DOCKERFILE_PATH} \
+                                      --build-arg JAR_PATH=build/libs/${appName}.jar \
+                                      -t ${image} \
+                                      ${module}
+
+                                      docker push ${image}
+                                    """
+                                }
+
+                                // Deploy to k3s (staging/prod, tagged only)
+                                def k8sNamespace = branchName
+                                def k8sDir = "${module}/infra/k3s/${branchName}"
+
+                                withEnv(["KUBECONFIG=/var/lib/jenkins/.kube/config"]) {
+                                    sh """
+                                      sed -e 's|__IMAGE__|${image}|g' ${k8sDir}/deployment.yaml | kubectl -n ${k8sNamespace} apply -f -
+                                      kubectl -n ${k8sNamespace} apply -f ${k8sDir}/service.yaml
+                                      kubectl -n ${k8sNamespace} rollout status deployment ${module} --timeout=120s
+                                    """
+                                }
+                                continue
+                            }
+
+                            echo "지원하지 않는 브랜치 -> 스킵"
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            cleanWs()
+        }
+    }
+}
