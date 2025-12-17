@@ -15,6 +15,8 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import java.util.List;
+
 @Configuration
 @EnableMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
@@ -35,7 +37,7 @@ public class SecurityConfig {
 				})
 				.authorizeHttpRequests(auth -> {
 
-							// 화이트 리스트 = 인증에서 제외
+							// 기본 화이트 리스트 = 인증에서 제외
 							DefaultWhiteList.URIS.forEach(white -> {
 								if (white.contains(":")) {
 									String whiteUri = white.split(":")[0];
@@ -58,6 +60,7 @@ public class SecurityConfig {
 							// 이 외 모든 endpoint 에 인증 수행
 							auth
 									.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+									.requestMatchers("/actuator/**").permitAll()
 									.requestMatchers("/api/auth/v1/**").permitAll()
 									.requestMatchers(HttpMethod.POST, "/api/accounts").permitAll()
 									.anyRequest().authenticated();

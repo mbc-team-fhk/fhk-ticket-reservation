@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: fhk-ticketing-movie-service
+  namespace: staging
+  labels:
+    app: fhk-ticketing-movie-service
+    env: staging
+spec:
+  type: ClusterIP
+  selector:
+    app: fhk-ticketing-movie-service
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080

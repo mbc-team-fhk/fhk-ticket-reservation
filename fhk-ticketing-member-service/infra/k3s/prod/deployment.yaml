@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fhk-ticketing-member-service
+  namespace: prod
+  labels:
+    app: fhk-ticketing-member-service
+    env: prod
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: fhk-ticketing-member-service
+  template:
+    metadata:
+      labels:
+        app: fhk-ticketing-member-service
+        env: prod
+    spec:
+      containers:
+        - name: fhk-ticketing-member-service
+          image: juno6800/fhk-ticketing-member-service:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          env:
+#            - name: SPRING_PROFILES_ACTIVE
+#              value: "prod"
+
+            # 필수(기본값 없는 것들만)
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: fhk-security-db
+                  key: username
+            - name: DB_PW
+              valueFrom:
+                secretKeyRef:
+                  name: fhk-security-db
+                  key: password
+            - name: REDIS_PW
+              valueFrom:
+                secretKeyRef:
+                  name: fhk-redis
+                  key: password
+
+            # 추후 환경별 다른 환경변수 필요한경우 풀고 수정
+            - name: SERVER_PORT
+              value: "8080"
+            - name: SQL_INCREMENT_SIZE
+              value: "50"
+            # - name: DB_URL
+            #   value: "jdbc:mariadb://192.168.45.210:3306/fhk_secu_db"
+            # - name: REDIS_HOST
+            #   value: "192.168.45.211"
+            # - name: REDIS_PORT
+            #   value: "6379"
+
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 10
+
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 20
+

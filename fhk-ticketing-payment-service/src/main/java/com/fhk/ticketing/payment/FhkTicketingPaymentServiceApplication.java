@@ -13,7 +13,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 @SpringBootApplication
 @EnableJpaAuditing // BaseEntity
 @EnableConfigurationProperties(JwtVerifierProperties.class) // JwtProperties
-@Import({GlobalExceptionHandler.class, JwtVerifier.class, TokenGuard.class}) // 임포트    @ComponentScan("com.fhk.security.core")      @SpringBootApplication
+@Import({GlobalExceptionHandler.class, JwtVerifier.class}) // 임포트    @ComponentScan("com.fhk.security.core")      @SpringBootApplication
 public class FhkTicketingPaymentServiceApplication {
 
 	public static void main(String[] args) {

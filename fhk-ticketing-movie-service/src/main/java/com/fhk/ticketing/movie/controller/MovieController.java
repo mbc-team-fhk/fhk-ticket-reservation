@@ -50,25 +50,25 @@ public class MovieController {
 
 	// 2. 영화 목록 조회
 	// - pageable 조회
-	@GetMapping
-	public ResponseEntity<?> getMovieList(
-			@RequestParam(name = "page", defaultValue = "1", required = false) Integer page,
-			@RequestParam(name = "size", defaultValue = "20", required = false) Integer size,
-			@AuthenticationPrincipal FhkUserPrincipal principal) {
-
-		// Request
-		// 상영관 ID
-		//
-
-		return null;
-	}
+//	@GetMapping
+//	public ResponseEntity<?> getMovieList(
+//			@RequestParam(name = "page", defaultValue = "1", required = false) Integer page,
+//			@RequestParam(name = "size", defaultValue = "20", required = false) Integer size,
+//			@AuthenticationPrincipal FhkUserPrincipal principal) {
+//
+//		// Request
+//		// 상영관 ID
+//		//
+//
+//		return null;
+//	}
 
 	// 3. 영화 상세 조회
-	@GetMapping("/{movieId}")
-	public ResponseEntity<?> getMovieDetail(@PathVariable Long movieId,
-	                                  @AuthenticationPrincipal FhkUserPrincipal principal) {
-		return null;
-	}
+//	@GetMapping("/{movieId}")
+//	public ResponseEntity<?> getMovieDetail(@PathVariable Long movieId,
+//	                                  @AuthenticationPrincipal FhkUserPrincipal principal) {
+//		return null;
+//	}
 
 	// 4. 영화 정보 수정
 	// 티켓팅 토이프로젝트에서는 CMS 기능 제외
@@ -83,18 +83,18 @@ public class MovieController {
 	// 1. 장르 등록
 	// - 장르 코드
 	// - 장르 이름
-	@PostMapping
-	@PreAuthorize("hasRole('ADMIN')")
-	public ResponseEntity<?> addGenre(@RequestBody Map<String, ?> request,
-	                                  @AuthenticationPrincipal FhkUserPrincipal principal) {
-		return null;
-	}
+//	@PostMapping
+//	@PreAuthorize("hasRole('ADMIN')")
+//	public ResponseEntity<?> addGenre(@RequestBody Map<String, ?> request,
+//	                                  @AuthenticationPrincipal FhkUserPrincipal principal) {
+//		return null;
+//	}
 
 	// 2. 장르 목록 조회
-	@PostMapping
-	@PreAuthorize("hasRole('ADMIN')")
-	public ResponseEntity<?> getGenreList(@RequestBody Map<String, ?> request,
-	                                  @AuthenticationPrincipal FhkUserPrincipal principal) {
-		return null;
-	}
+//	@PostMapping
+//	@PreAuthorize("hasRole('ADMIN')")
+//	public ResponseEntity<?> getGenreList(@RequestBody Map<String, ?> request,
+//	                                  @AuthenticationPrincipal FhkUserPrincipal principal) {
+//		return null;
+//	}
 }
