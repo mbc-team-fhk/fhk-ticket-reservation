@@ -113,10 +113,11 @@ pipeline {
                                   export PATH=${env.JAVA17_HOME}/bin:\$PATH
                                   ./gradlew :${module}:clean :${module}:test :${module}:bootJar --no-daemon
                                 """
-                                continue
-                            }
 
-                            if (branchName in ['staging', 'prod']) {
+                                // jenkins Pipeline에서 stage {} 안에서 continue/break 사용하지 않기 (추적 불가)
+                                // continue
+
+                            } else if (branchName in ['staging', 'prod']) {
 
                                 // Docker build & push (tagged only)
                                 def tag = sh(
@@ -170,10 +171,13 @@ pipeline {
                                       kubectl -n ${k8sNamespace} rollout status deployment ${module} --timeout=120s
                                     """
                                 }
-                                continue
-                            }
 
-                            echo "지원하지 않는 브랜치 -> 스킵"
+                                // jenkins Pipeline에서 stage {} 안에서 continue/break 사용하지 않기 (추적 불가)
+                                // continue
+
+                            } else {
+                                echo "지원하지 않는 브랜치 -> 스킵"
+                            }
                         }
                     }
                 }
