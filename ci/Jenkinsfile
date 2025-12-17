@@ -61,7 +61,16 @@ pipeline {
                 script {
                     def allModules = detectModules()
                     def changedModules = changedTopDirs()
-                    def target = allModules.intersect(changedModules)
+
+                    // Jenkins Groovy Sandbox 에서 퍼미션 오류남
+                    // ** [관리자] Jenkins 관리 → In-process Script Approval 에서 intersect 시그니처 승인 방법도 있음
+                    // def target = allModules.intersect(changedModules)
+
+                    def allSet = new HashSet(allModules)
+                    def changedSet = new HashSet(changedModules)
+
+                    allSet.retainAll(changedSet)
+                    def target = allSet as List
 
                     // 변경된 모듈 감지 못하면 전체 빌드
                     if (!target)
