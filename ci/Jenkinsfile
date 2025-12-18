@@ -127,7 +127,9 @@ pipeline {
 
                                 if (!tag) {
                                     echo "Skip... not tag commit"
-                                    continue
+
+                                    // jenkins Pipeline에서 stage {} 안에서 continue/break 사용하지 않기 (추적 불가)
+                                    // continue
                                 }
 
                                 // dev와 워크스페이스 공유안함. 재빌드 필요
