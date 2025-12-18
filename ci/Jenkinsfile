@@ -169,9 +169,11 @@ pipeline {
 
                                     withEnv(["KUBECONFIG=/var/lib/jenkins/.kube/config"]) {
                                         sh """
-                                          sed -e 's|__IMAGE__|${image}|g' ${k8sDir}/deployment.yaml | kubectl -n ${k8sNamespace} apply -f -
+                                          kubectl -n ${k8sNamespace} apply -f ${k8sDir}/deployment.yaml
                                           kubectl -n ${k8sNamespace} apply -f ${k8sDir}/service.yaml
-                                          kubectl -n ${k8sNamespace} rollout status deployment ${module} --timeout=120s
+
+                                          kubectl -n ${k8sNamespace} rollout restart deployment ${module}
+                                          kubectl -n ${k8sNamespace} rollout status deployment ${module} --timeout=300s
                                         """
                                     }
                                 }
