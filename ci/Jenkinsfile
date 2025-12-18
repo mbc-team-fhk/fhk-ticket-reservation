@@ -141,7 +141,7 @@ pipeline {
                                     """
 
                                     def appName = module
-                                    def image = "${env.REGISTRY}/${appName}:${tag}"
+                                    def image = "${env.REGISTRY}/${appName}"
 
                                     withCredentials([usernamePassword(
                                         credentialsId: 'dockerhub-cred',
@@ -154,10 +154,12 @@ pipeline {
                                           docker build \
                                           -f ${module}/${env.DOCKERFILE_PATH} \
                                           --build-arg JAR_PATH=build/libs/${appName}.jar \
-                                          -t ${image} \
+                                          -t ${image}:${tag} \
+                                          -t ${image}:latest \
                                           ${module}
 
-                                          docker push ${image}
+                                          docker push ${image}:${tag}
+                                          docker push ${image}:latest
                                         """
                                     }
 
