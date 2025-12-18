@@ -126,60 +126,60 @@ pipeline {
                                 ).trim()
 
                                 if (!tag) {
-                                    echo "Skip... not tag commit"
-                                    continue
-                                }
+                                    echo ">>> skip: not tag commit"
 
-                                // dev와 워크스페이스 공유안함. 재빌드 필요
-                                // 추후에 dev 빌드본 승격으로 개선필요
-                                sh 'chmod +x gradlew'
-                                sh """
-                                  export JAVA_HOME=${env.JAVA17_HOME}
-                                  export PATH=${env.JAVA17_HOME}/bin:\$PATH
-                                  ./gradlew :${module}:clean :${module}:bootJar --no-daemon
-                                """
-
-                                def appName = module
-                                def image = "${env.REGISTRY}/${appName}:${tag}"
-
-                                withCredentials([usernamePassword(
-                                    credentialsId: 'dockerhub-cred',
-                                    usernameVariable: 'DOCKERHUB_USER',
-                                    passwordVariable: 'DOCKERHUB_PASS'
-                                )]) {
+                                    // jenkins Pipeline에서 stage {} 안에서 continue/break 사용하지 않기 (추적 불가)
+                                    // continue
+                                } else {
+                                    // dev와 워크스페이스 공유안함. 재빌드 필요
+                                    // 추후에 dev 빌드본 승격으로 개선필요
+                                    sh 'chmod +x gradlew'
                                     sh """
-                                      echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USER" --password-stdin
-
-                                      docker build \
-                                      -f ${module}/${env.DOCKERFILE_PATH} \
-                                      --build-arg JAR_PATH=build/libs/${appName}.jar \
-                                      -t ${image} \
-                                      ${module}
-
-                                      docker push ${image}
+                                      export JAVA_HOME=${env.JAVA17_HOME}
+                                      export PATH=${env.JAVA17_HOME}/bin:\$PATH
+                                      ./gradlew :${module}:clean :${module}:bootJar --no-daemon
                                     """
-                                }
 
-                                // Deploy to k3s (staging/prod, tagged only)
-                                def k8sNamespace = branchName
-                                def k8sDir = "${module}/infra/k3s/${branchName}"
+                                    def appName = module
+                                    def image = "${env.REGISTRY}/${appName}:${tag}"
 
-                                withEnv(["KUBECONFIG=/var/lib/jenkins/.kube/config"]) {
-                                    sh """
-                                      sed -e 's|__IMAGE__|${image}|g' ${k8sDir}/deployment.yaml | kubectl -n ${k8sNamespace} apply -f -
-                                      kubectl -n ${k8sNamespace} apply -f ${k8sDir}/service.yaml
-                                      kubectl -n ${k8sNamespace} rollout status deployment ${module} --timeout=120s
-                                    """
+                                    withCredentials([usernamePassword(
+                                        credentialsId: 'dockerhub-cred',
+                                        usernameVariable: 'DOCKERHUB_USER',
+                                        passwordVariable: 'DOCKERHUB_PASS'
+                                    )]) {
+                                        sh """
+                                          echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USER" --password-stdin
+
+                                          docker build \
+                                          -f ${module}/${env.DOCKERFILE_PATH} \
+                                          --build-arg JAR_PATH=build/libs/${appName}.jar \
+                                          -t ${image} \
+                                          ${module}
+
+                                          docker push ${image}
+                                        """
+                                    }
+
+                                    // Deploy to k3s (staging/prod, tagged only)
+                                    def k8sNamespace = branchName
+                                    def k8sDir = "${module}/infra/k3s/${branchName}"
+
+                                    withEnv(["KUBECONFIG=/var/lib/jenkins/.kube/config"]) {
+                                        sh """
+                                          sed -e 's|__IMAGE__|${image}|g' ${k8sDir}/deployment.yaml | kubectl -n ${k8sNamespace} apply -f -
+                                          kubectl -n ${k8sNamespace} apply -f ${k8sDir}/service.yaml
+                                          kubectl -n ${k8sNamespace} rollout status deployment ${module} --timeout=120s
+                                        """
+                                    }
                                 }
 
                                 // jenkins Pipeline에서 stage {} 안에서 continue/break 사용하지 않기 (추적 불가)
                                 // continue
 
                             } else {
-                                echo "지원하지 않는 브랜치 -> 스킵"
+                                echo ">>> skip: Unknown Branch"
                             }
-
-
                         }
                     }
                 }
