@@ -1,5 +1,5 @@
 server:
-  port: ${SERVER_PORT:9005} # k3s 컨테이너 내부에서는 8080 요구함, env 설정 필요
+  port: ${SERVER_PORT:9105} # k3s 컨테이너 내부에서는 8080 요구함, env 설정 필요
 
 spring:
   application:
