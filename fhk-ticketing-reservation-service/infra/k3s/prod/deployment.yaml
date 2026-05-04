@@ -29,8 +29,8 @@ spec:
           ports:
             - containerPort: 8080
           env:
-#            - name: SPRING_PROFILES_ACTIVE
-#              value: "prod"
+            - name: SPRING_PROFILES_ACTIVE
+              value: "prod"
 
             # 필수(기본값 없는 것들만)
             - name: DB_USER
@@ -55,7 +55,7 @@ spec:
             - name: SQL_INCREMENT_SIZE
               value: "50"
             # - name: DB_URL
-            #   value: "jdbc:mariadb://192.168.45.210:3306/fhk_secu_db"
+            #   value: "jdbc:mariadb://192.168.45.210:3306/fhk_ticketing_reservation_db"
             # - name: REDIS_HOST
             #   value: "192.168.45.211"
             # - name: REDIS_PORT
