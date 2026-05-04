@@ -1,35 +1,54 @@
 server:
-  port: ${SERVER_PORT:9003} # k3s 컨테이너 내부에서는 8080 요구함, env 설정 필요
+  port: ${SERVER_PORT:9101}
 
 spring:
   application:
     name: fhk-ticketing-reservation-service
+
   datasource:
-    password: ${DB_PW}
     driver-class-name: org.mariadb.jdbc.Driver
+    url: ${DB_URL:jdbc:mariadb://192.168.45.210:3306/fhk_ticketing_reservation_db}
     username: ${DB_USER}
-    url: ${DB_URL:jdbc:mariadb://192.168.45.210:3306/fhk_ticket_reservation_db}
+    password: ${DB_PW}
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 1
+      connection-timeout: 30000
+
   jpa:
-    properties:
-      hibernate.id.sequence.increment_size: ${SQL_INCREMENT_SIZE:1}   # dev 환경 기본값 1,  prod 프로필에서는 50 권장, env 설정 필요
-      hibernate:
-        default_batch_fetch_size: '1000'
-        format_sql: 'true'
-        show_sql: 'true'
     hibernate:
       ddl-auto: update
     database-platform: org.hibernate.dialect.MariaDBDialect
+    properties:
+      hibernate:
+        default_batch_fetch_size: 1000
+        format_sql: true
+        show_sql: true
+
   data:
     redis:
       host: ${REDIS_HOST:192.168.45.211}  # 사설 IP 고정
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PW}
+fhk:
+  security:
+    whitelist:
+      - OPTIONS:/**
+      - /actuator/health
+      - /actuator/health/**
+      - /actuator/info
+      - GET:/demo/screenings
+      - GET:/demo/screenings/**
+      - POST:/demo/reset
+      - GET:/screenings/**
+      - POST:/reservations/expire
+      - POST:/internal/reservations/**
 
-jwt:
-  verifier: # JWT 인증시 사용
-    public-key-path: classpath:keys/jwt-public.pem
+  jwt:
+    verifier:
+      public-key-path: classpath:keys/jwt-public.pem
 
-management: # actuator pod 헬스체크
+management:
   endpoints:
     web:
       exposure:
@@ -40,9 +59,6 @@ management: # actuator pod 헬스체크
 
 logging:
   level:
-    org:
-      hibernate:
-        type:
-          descriptor:
-            sql: trace
-
+    com.fhk: debug
+    org.hibernate.SQL: debug
+    org.hibernate.type.descriptor.sql: trace
