@@ -23,6 +23,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
@@ -162,6 +163,9 @@ public class ReservationServiceImpl implements ReservationService {
             seatOccupancyRepository.saveAll(occupancies);
             seatOccupancyRepository.flush();
         } catch (DataIntegrityViolationException e) {
+            if (!isSeatOccupancyConflict(e)) {
+                throw e;
+            }
             throw new IllegalStateException("선택한 좌석 중 이미 선점되었거나 예매된 좌석이 있습니다.");
         }
 
@@ -324,6 +328,19 @@ public class ReservationServiceImpl implements ReservationService {
      * 예약 번호 생성
      */
     private String nextReservationNo(LocalDateTime now) {
-        return "RSV-" + now.format(DateTimeFormatter.ofPattern("yyyyMMddHHmmssSSS"));
+        return "RSV-" + now.format(DateTimeFormatter.ofPattern("yyyyMMdd"))
+                + "-" + UUID.randomUUID();
+    }
+
+    private boolean isSeatOccupancyConflict(Throwable e) {
+        Throwable current = e;
+        while (current != null) {
+            String message = current.getMessage();
+            if (message != null && message.contains("uk_seat_occupancy_screening_seat")) {
+                return true;
+            }
+            current = current.getCause();
+        }
+        return false;
     }
 }
