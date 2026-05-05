@@ -266,6 +266,7 @@ public class PaymentServiceImpl implements PaymentService {
      * 결제 번호 생성
      */
     private String nextPaymentNo(LocalDateTime now) {
-        return "PAY-" + now.format(DateTimeFormatter.ofPattern("yyyyMMddHHmmssSSS"));
+        return "PAY-" + now.format(DateTimeFormatter.ofPattern("yyyyMMdd"))
+                + "-" + UUID.randomUUID();
     }
 }
