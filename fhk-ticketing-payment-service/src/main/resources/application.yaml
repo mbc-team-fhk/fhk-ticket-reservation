@@ -1,0 +1,66 @@
+server:
+  port: ${SERVER_PORT:9102}
+
+spring:
+  application:
+    name: fhk-ticketing-payment-service
+
+  datasource:
+    driver-class-name: org.mariadb.jdbc.Driver
+    url: ${DB_URL:jdbc:mariadb://192.168.45.210:3306/fhk_ticketing_payment_db}
+    username: ${DB_USER:root}
+    password: ${DB_PW:}
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 1
+      connection-timeout: 30000
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    database-platform: org.hibernate.dialect.MariaDBDialect
+    properties:
+      hibernate:
+        default_batch_fetch_size: 1000
+        format_sql: true
+        show_sql: true
+
+  data:
+    redis:
+      host: ${REDIS_HOST:192.168.45.211}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PW}
+
+fhk:
+  security:
+    whitelist:
+      - OPTIONS:/**
+      - /actuator/health
+      - /actuator/health/**
+      - /actuator/info
+      - GET:/payments/**
+      - POST:/mock-pg/**
+      - POST:/pg/callback
+
+  jwt:
+    verifier:
+      public-key-path: classpath:keys/jwt-public.pem
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: never
+
+logging:
+  level:
+    com.fhk: debug
+    org.hibernate.SQL: debug
+    org.hibernate.type.descriptor.sql: trace
+
+client:
+  reservation:
+    url: ${RESERVATION_SERVICE_URL:http://localhost:9101}

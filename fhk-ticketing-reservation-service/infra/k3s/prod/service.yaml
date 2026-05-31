@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: fhk-ticketing-reservation-service
+  namespace: prod
+  labels:
+    app: fhk-ticketing-reservation-service
+    env: prod
+spec:
+  type: ClusterIP
+  selector:
+    app: fhk-ticketing-reservation-service
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080

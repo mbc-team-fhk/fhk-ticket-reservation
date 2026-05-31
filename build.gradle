@@ -1,0 +1,102 @@
+plugins {
+    id 'org.springframework.boot' version '3.5.6' apply false
+    id 'io.spring.dependency-management' version '1.1.7' apply false
+}
+allprojects {
+    repositories {
+        mavenCentral()
+    }
+}
+
+// 서브 모듈에 적용
+// settings.gradle include 모듈
+subprojects {
+//    // Query DSL
+//    buildscript {
+//        ext {
+//            queryDslVersion = "5.0.0"
+//        }
+//    }
+
+    // Root 프로젝트 명시버전 채용함 (자동)
+    apply plugin: 'java'
+    apply plugin: 'org.springframework.boot'
+    apply plugin: 'io.spring.dependency-management'
+
+    java {
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(17)
+        }
+    }
+
+    configurations {
+        compileOnly {
+            extendsFrom annotationProcessor
+        }
+    }
+
+    group = 'com.fhk.ticketing'
+    description = 'fhk-ticket-reservation'
+
+    dependencies {
+
+        // 모듈 import ( Maven Repo 리서치 스킵으로 단순하게 jar import 로 감)
+        // 동일 버전 모듈 덮어쓰기 하는경우 -> 수정사항 자동반영 안됨 (컴파일에러)
+        // 1. 아래 해당하는 모듈 삭제후 gradle sync
+        // 2. 아래 덮어쓰기한 모듈 다시 추가 후 gradle sync
+        implementation files("../libs/fhk-common-1.0.0-plain.jar")
+        implementation files("../libs/fhk-core-1.0.0-plain.jar")
+        implementation files("../libs/fhk-security-core-1.0.0-plain.jar")
+
+        // Spring MVC
+        implementation 'org.springframework.boot:spring-boot-starter-web'
+        developmentOnly 'org.springframework.boot:spring-boot-devtools'
+        implementation 'org.springframework.boot:spring-boot-starter-validation'
+
+        // DB
+        runtimeOnly 'org.mariadb.jdbc:mariadb-java-client'
+        implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+        implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+
+        // Lombok
+        compileOnly 'org.projectlombok:lombok'
+        annotationProcessor 'org.projectlombok:lombok'
+        testCompileOnly 'org.projectlombok:lombok'  // 테스트용 추가
+        testAnnotationProcessor 'org.projectlombok:lombok'   // 테스트용 추가
+
+        // JUnitTest
+        testImplementation 'org.springframework.boot:spring-boot-starter-test'
+        testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+        testImplementation("com.h2database:h2")
+
+        // Query DSL
+//        implementation "com.querydsl:querydsl-jpa:${queryDslVersion}:jakarta"
+
+//        annotationProcessor(
+//                "jakarta.persistence:jakarta.persistence-api",
+//                "jakarta.annotation:jakarta.annotation-api",
+//                "com.querydsl:querydsl-apt:${queryDslVersion}:jakarta")
+
+        // 스프링 시큐리티
+        implementation 'org.springframework.boot:spring-boot-starter-security'
+
+        // jwt 토큰
+        implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
+        runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
+        runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
+
+        // health check 상태/메트릭 제공 (k3s 에서 pod ready 판단)
+        implementation 'org.springframework.boot:spring-boot-starter-actuator'
+
+    }
+
+    // test
+    test {
+        useJUnitPlatform()
+    }
+
+    jar {
+        enabled = false
+    }
+
+}
