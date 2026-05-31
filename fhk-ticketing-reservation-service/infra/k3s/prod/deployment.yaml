@@ -54,8 +54,8 @@ spec:
               value: "8080"
             - name: SQL_INCREMENT_SIZE
               value: "50"
-            # - name: DB_URL
-            #   value: "jdbc:mariadb://192.168.45.210:3306/fhk_ticketing_reservation_db"
+            - name: DB_URL
+              value: "jdbc:mariadb://192.168.45.210:3306/fhk_ticketing_reservation_db_live"
             # - name: REDIS_HOST
             #   value: "192.168.45.211"
             # - name: REDIS_PORT
